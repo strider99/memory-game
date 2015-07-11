@@ -1,0 +1,97 @@
+# implementation of card game - Memory
+
+import simplegui
+import random
+
+# helper function to initialize globals
+def new_game():
+    global cards, exposed, state, count
+    cards = range(0, 8) * 2 # create a pair of #s 0 - 7
+    random.shuffle(cards) # shuffles the numbers
+    exposed = range(0, 1) * 16 # create 16 #s = 0
+    state = 0 # state of game (number of cards exposed)
+    count = 0 # keeps track of moves
+    move()
+    
+# define event handlers
+def mouseclick(pos):
+    global exposed, state, card_index
+    global first_index, first_value, second_index, second_value
+    if state == 0:
+        mouse_pos = list(pos) # convert mouse position tuple to list
+        card_index = mouse_pos[0] //50  # convert position to card index
+        
+        if exposed[card_index] == 0: # if the selected card isn't exposed
+            exposed[card_index] = 1 # expose it
+            state = 1 # one card exposed
+            move()  # add move for new card
+            first_index = card_index # store card index
+            first_value = cards[card_index] #store value           
+            
+    elif state == 1:
+        mouse_pos = list(pos) # convert mouse position tuple to list
+        card_index = mouse_pos[0] //50  # convert position to card index
+        
+        if exposed[card_index] == 0: # if the selected card isn't exposed
+            exposed[card_index] = 1 # expose it
+            second_index = card_index # set second index to the card index
+            second_value = cards[card_index] #set the second value current value            
+            if cards[card_index] == first_value: # if guess is correct
+                state = 0 # leave the cards up & pick new card
+                
+            else:
+                state = 2 # 2 cards non matching cards are exposed
+                      
+        else:
+            state = 1
+                       
+    elif state == 2:        
+        exposed[card_index] = 0         
+        exposed[first_index] = 0
+        mouse_pos = list(pos) # convert mouse position tuple to list
+        card_index = mouse_pos[0] //50  # convert position to card index
+        
+        if card_index == first_index or card_index ==second_index: # check if card clicked is already exposed
+             exposed[first_index] = 1  # if so then keep the first card selected exposed       
+             exposed[second_index] = 1 # if so then keep the second card selected expopsed
+             
+        else:
+             exposed[card_index] = 1 # expose card
+             state = 1 # one card is exposed
+             move() # add move for new card
+             first_index = card_index
+             first_value = cards[card_index]
+                
+def move():
+    global count
+    label.set_text("Moves=" + str(count))
+    count = count + 1
+    return
+
+def draw(canvas):
+    for card in cards: #  draws shuffled number pairs on canvas
+        for i in range(16):
+         
+            if exposed[i] == 0:
+                canvas.draw_polygon([(i*50, 0),
+                                    ((i*50+49), 0),
+                                    ((i*50+49), 100),
+                                    ((i*50), 100)], 1,
+                                    "Red", "Green")
+            elif exposed[i] == 1:
+                canvas.draw_text(str(cards[i]),
+                            (i * 50 + 10, 60), 48, "Red")
+
+# create frame and add a button and labels
+frame = simplegui.create_frame("Memory", 800, 100)
+frame.set_draw_handler(draw)
+frame.add_button("Restart", new_game)
+label = frame.add_label("Moves = 0")
+
+# register event handlers
+frame.set_mouseclick_handler(mouseclick)
+frame.set_draw_handler(draw)
+
+# get things rolling
+frame.start()
+new_game()
